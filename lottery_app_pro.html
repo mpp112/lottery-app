@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>随机选号助手 Pro</title>
+
+<style>
+body{
+font-family:Arial;
+background:linear-gradient(135deg,#f3f4f6,#cfd9df);
+margin:0;
+padding:20px;
+display:flex;
+justify-content:center;
+}
+
+.container{
+background:white;
+padding:20px;
+border-radius:12px;
+box-shadow:0 10px 25px rgba(0,0,0,0.15);
+max-width:420px;
+width:100%;
+text-align:center;
+}
+
+button{
+padding:12px;
+border:none;
+border-radius:8px;
+background:#1976d2;
+color:white;
+font-size:16px;
+cursor:pointer;
+width:100%;
+margin-top:10px;
+}
+
+button:hover{background:#0d47a1;}
+
+.tab{
+display:flex;
+gap:10px;
+margin-bottom:15px;
+}
+
+.tab button{
+background:#e0e0e0;
+color:black;
+}
+
+.tab button.active{
+background:#1976d2;
+color:white;
+}
+
+.red{color:#d32f2f;font-weight:bold;}
+.blue{color:#1565c0;font-weight:bold;}
+
+.history{
+margin-top:20px;
+text-align:left;
+max-height:250px;
+overflow-y:auto;
+font-size:14px;
+background:#fafafa;
+padding:10px;
+border-radius:8px;
+}
+
+.history-item{
+margin-bottom:8px;
+border-bottom:1px solid #ddd;
+padding-bottom:5px;
+}
+.clear-btn{
+background:#c62828;
+margin-top:10px;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<h2>随机选号助手 Pro<br>Crypto安全随机</h2>
+
+<div class="tab">
+<button id="ssqTab" class="active" onclick="switchMode('ssq')">双色球</button>
+<button id="dltTab" onclick="switchMode('dlt')">大乐透</button>
+</div>
+
+<div id="result">点击生成号码</div>
+
+<button onclick="generate()">生成随机号码</button>
+
+<button class="clear-btn" onclick="clearHistory()">清空历史记录</button>
+
+<div class="history" id="history"></div>
+
+</div>
+
+<script>
+
+let mode="ssq";
+loadHistory();
+
+function switchMode(m){
+mode=m;
+document.getElementById("result").innerHTML="点击生成号码";
+document.getElementById("ssqTab").classList.remove("active");
+document.getElementById("dltTab").classList.remove("active");
+if(m==="ssq"){
+document.getElementById("ssqTab").classList.add("active");
+}else{
+document.getElementById("dltTab").classList.add("active");
+}
+}
+
+function secureRandomInt(max){
+const array=new Uint32Array(1);
+const limit=Math.floor(0xFFFFFFFF/max)*max;
+let rand;
+do{
+window.crypto.getRandomValues(array);
+rand=array[0];
+}while(rand>=limit);
+return rand%max;
+}
+
+function secureDraw(max,count){
+const result=[];
+while(result.length<count){
+const n=secureRandomInt(max)+1;
+if(!result.includes(n)){result.push(n);}
+}
+return result.sort((a,b)=>a-b);
+}
+
+function format(arr){
+return arr.map(n=>n.toString().padStart(2,'0')).join(' ');
+}
+
+function generate(){
+let record="";
+let display="";
+
+if(mode==="ssq"){
+const reds=secureDraw(33,7);
+const blues=secureDraw(16,2);
+display='<div class="red">红球：'+format(reds)+'</div><br>'+
+'<div class="blue">蓝球：'+format(blues)+'</div>';
+record="双色球 | 红："+format(reds)+" 蓝："+format(blues);
+}else{
+const front=secureDraw(35,6);
+const back=secureDraw(12,3);
+display='<div class="red">前区：'+format(front)+'</div><br>'+
+'<div class="blue">后区：'+format(back)+'</div>';
+record="大乐透 | 前："+format(front)+" 后："+format(back);
+}
+
+document.getElementById("result").innerHTML=display;
+saveHistory(record);
+}
+
+function saveHistory(text){
+let history=JSON.parse(localStorage.getItem("lotteryHistory"))||[];
+const time=new Date().toLocaleString();
+history.unshift(time+" | "+text);
+localStorage.setItem("lotteryHistory",JSON.stringify(history));
+renderHistory();
+}
+
+function loadHistory(){
+renderHistory();
+}
+
+function renderHistory(){
+let history=JSON.parse(localStorage.getItem("lotteryHistory"))||[];
+const container=document.getElementById("history");
+container.innerHTML="";
+history.forEach(item=>{
+const div=document.createElement("div");
+div.className="history-item";
+div.textContent=item;
+container.appendChild(div);
+});
+}
+
+function clearHistory(){
+localStorage.removeItem("lotteryHistory");
+renderHistory();
+}
+
+</script>
+
+</body>
+</html>
